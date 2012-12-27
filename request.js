@@ -117,7 +117,7 @@
 		cache = {
 			executed: false,
 			to: function to (url, data) {
-				
+
 			},
 			get: function get () {
 				var own;
@@ -128,11 +128,7 @@
 
 				});
 			},
-			config: {
-				'onError': null,
-				'beforeSend': null,
-				'onSuccess': null
-			},
+			config: {},
 			put: function put (key, value) {
 				var config = (!_.isString(key) ? key : { key : value });
 
@@ -140,7 +136,7 @@
 			}
 		};
 
-
+		cache.config = _.defaults(cache.config, self.config);
 
 		return cache;
 	};
