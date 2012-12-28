@@ -1,6 +1,6 @@
 (function () { 'use strict'; 
 
-	var root, Request, _, api, log, ev, storage;
+	var root, Request, _, api, ev, storage;
 
 	// Save a reference to the global object (`window` in the browser, `global` on the server)
 	root = this;
@@ -21,12 +21,11 @@
 
 	root.Javie.Request = Request;
 
-	if ('undefined' === typeof root.Javie.Logger || 'undefined' === typeof root.Javie.Events) {
+	if ('undefined' === typeof root.Javie.Events) {
 		throw new Error("Javie is missing Logger and Events");
 	}
 
 	// Load all the dependencies
-	log = root.Javie.Logger.make();
 	ev  = root.Javie.Events.make();
 	_   = root._;
 
@@ -141,7 +140,7 @@
 					'dataType': 'json',
 					'id': '',
 					'object': object
-				})
+				});
 			},
 			get: function get () {
 				var own;
