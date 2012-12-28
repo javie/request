@@ -116,8 +116,30 @@
 
 		cache = {
 			executed: false,
-			to: function to (url, data) {
+			to: function to (url, object, dataType) {
+				var own, r, t, u;
 
+				own = this;
+
+				if (_.isUndefined(url)) {
+					throw new Error('Missing required parameter.');
+				}
+
+				if (_.isNull(object)) object = root.document;
+
+				r = url.split(' ');
+				t = ['POST', 'GET', 'PUT', 'DELETE'];
+
+				own.put({
+					'name': name,
+					'type': 'GET',
+					'uri': '',
+					'query': '',
+					'data': '',
+					'dataType': 'json',
+					'id': '',
+					'object': object
+				})
 			},
 			get: function get () {
 				var own;
@@ -128,7 +150,16 @@
 
 				});
 			},
-			config: {},
+			config: {
+				'name': '',
+				'type': 'GET',
+				'uri': '',
+				'query': '',
+				'data': '',
+				'dataType': 'json',
+				'id': '',
+				'object': null
+			},
 			put: function put (key, value) {
 				var config = (!_.isString(key) ? key : { key : value });
 
@@ -138,7 +169,9 @@
 
 		cache.config = _.defaults(cache.config, self.config);
 
-		return cache;
+		caches[name] = cache;
+
+		return caches[name];
 	};
 
 }).call(this);
