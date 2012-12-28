@@ -1,14 +1,13 @@
 (function () { 'use strict'; 
 
-	var root, Requests, _, api, log, ev, caches;
+	var root, Request, _, api, log, ev, storage;
 
 	// Save a reference to the global object (`window` in the browser, `global` on the server)
 	root = this;
 
-	// Create a safe reference to Requests object to be used below.
-	Requests = {};
-
-	caches   = {};
+	// Create a safe reference to Request object to be used below.
+	Request = {};
+	storage = {};
 
 	// At this point, we don't have a request wrapper for Node.js implementation. So it would be
 	// best to display an exception.
@@ -20,7 +19,11 @@
 		throw new Error("Javie is required before using Javie.Request");
 	}
 
-	root.Javie.Request = Requests;
+	root.Javie.Request = Request;
+
+	if ('undefined' === typeof root.Javie.Logger || 'undefined' === typeof root.Javie.Events) {
+		throw new Error("Javie is missing Logger and Events");
+	}
 
 	// Load all the dependencies
 	log = root.Javie.Logger.make();
@@ -48,7 +51,7 @@
 	 * 
 	 * @type {Object}
 	 */
-	Requests.config = {
+	Request.config = {
 		'baseUrl': null,
 		'onError': function onError (data, status) {},
 		'beforeSend': function beforeSend (data, status) {},
@@ -71,7 +74,7 @@
 	 * @param  {mixed} value
 	 * @return {void}
 	 */
-	Requests.put = function put(key, value) {
+	Request.put = function put(key, value) {
 		var config = (!_.isString(key)) ? key : { key : value };
 
 		this.config = _.defaults(config, this.config);
@@ -83,7 +86,7 @@
 	 * @param  {string} name
 	 * @return {void}
 	 */
-	Requests.make = function make(name) {
+	Request.make = function make(name) {
 		var cache, child, childName, parent, self;
 
 		if (!_.isString(name)) name = 'default';
@@ -91,10 +94,9 @@
 		self = this;
 
 		// If cache is not empty, this mean that make was initiated before.
-		// @todo we should create child instances if the request has been
-		// executed.
-		if (!_.isUndefined(caches[name])) {
-			parent = caches[name];
+		// we should create child instances if the request has been executed.
+		if (!_.isUndefined(storage[name])) {
+			parent = storage[name];
 
 			// If parent has been executed, we need to create a child instance.
 			if (parent.executed === true) {
@@ -169,9 +171,9 @@
 
 		cache.config = _.defaults(cache.config, self.config);
 
-		caches[name] = cache;
+		storage[name] = cache;
 
-		return caches[name];
+		return storage[name];
 	};
 
 }).call(this);
