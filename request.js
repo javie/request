@@ -54,7 +54,7 @@
 		'baseUrl': null,
 		'onError': function onError (data, status) {},
 		'beforeSend': function beforeSend (data, status) {},
-		'onSuccess': function onSuccess (data, status) {}
+		'onComplete': function onComplete (data, status) {}
 	};
 
 	/**
@@ -81,6 +81,10 @@
 
 	/**
 	 * Make a new Request.
+	 *
+	 * <code>
+	 * 		var r = Javie.Request.make('foo');
+	 * </code>
 	 * 
 	 * @param  {string} name
 	 * @return {void}
@@ -104,7 +108,7 @@
 
 				// Replicate all parent configuration to child.
 				ev.clone('Request.onError: '+name).to('Request.onError: '+childName);
-				ev.clone('Request.onSuccess: '+name).to('Request.onSuccess: '+childName);
+				ev.clone('Request.onComplete: '+name).to('Request.onComplete: '+childName);
 				ev.clone('Request.beforeSend: '+name).to('Request.beforeSend: '+childName);
 
 				child.put(parent.config);
@@ -116,9 +120,27 @@
 		}
 
 		cache = {
+			/**
+			 * Execution status.
+			 * 
+			 * @type {Boolean}
+			 */
 			executed: false,
+			
+			/**
+			 * Create a request wrapper for a form.
+			 *
+			 * <code>
+			 * 		r.to('GET http://google.com?q=foobar', document.getElementById('foo'), 'JSON');
+			 * </code>
+			 * 
+			 * @param  {string}      url
+			 * @param  {DOMDocument} object
+			 * @param  {string}      dataType e.g: JSON, XML etc.
+			 * @return {self}
+			 */
 			to: function to (url, object, dataType) {
-				var own, r, t, u;
+				var own, r, t, u, tmp;
 
 				own = this;
 
@@ -134,23 +156,94 @@
 				own.put({
 					'name': name,
 					'type': 'GET',
-					'uri': '',
 					'query': '',
 					'data': '',
-					'dataType': 'json',
+					'dataType': (!_.isUndefined(dataType) ? dataType : 'json'),
 					'id': '',
 					'object': object
 				});
-			},
-			get: function get () {
-				var own;
 
-				own = this;
+				if (r.length === 1) own.put('uri', r[0]);
+				else {
+					if (_.indexOf(t, r[0]) > -1) own.put('type', r[0]);
+
+					own.put('uri', r[1]);
+
+					if (this.type !== 'GET') {
+						tmp = own.get('uri', '').split('?');
+
+						if (tmp.length > 0) {
+							own.put({
+								'query': tmp[1],
+								'uri': tmp[0]
+							});
+						}
+					}
+				}
+
+				own.put('id', '#'+api(own.get('object')).attr('id'));
+
+				return this;
+
+			},
+
+			/**
+			 * Execute the request.
+			 *
+			 * <code>
+			 * 		r.execute();
+			 * </code>
+			 * 
+			 * @return {void}
+			 */
+			execute: function execute () {
+				var own, data;
+
+				own  = this;
+				data = api(this.get('object')).serialize()+'&'+this.get('query');
+
+				this.executed = true;
+
+				ev.fire('Request.beforeSend', [own]);
+				ev.fire('Request.beforeSend: '+name, [own]);
+
+				own.beforeSend(own);
 
 				api.ajax({
+					'type': this.get('type'),
+					'dataType': this.get('dataType'),
+					'url': this.get('uri'),
+					'data': data,
+					'complete': function complete(xhr) {
+						var data, status;
 
+						if (xhr.responseText !== '') {
+							data   = parseJSON(xhr.responseText);
+							status = xhr.status;
+
+							if (data.hasOwnProperty('errors')) {
+								ev.fire('Request.onError', [data.errors, status, own]);
+								ev.fire('Request.onError: '+name, [data.errors, status, own]);
+
+								own['onError'](data.errors, status, own);
+
+								data.errors = null;
+							}
+
+							ev.emit('Request.onComplete', [data, status, own]);
+							ev.emit('Request.onComplete: '+name, [data, status, own]);
+
+							own.onComplete(data, status, self);
+						}
+					}
 				});
 			},
+
+			/**
+			 * Request configurations.
+			 *
+			 * @type {Object}
+			 */
 			config: {
 				'name': '',
 				'type': 'GET',
@@ -161,10 +254,31 @@
 				'id': '',
 				'object': null
 			},
+
+			/**
+			 * Update or overwrite a configuration.
+			 * 
+			 * @param  {mixed} key
+			 * @param  {mixed} value
+			 * @return {void}
+			 */
 			put: function put (key, value) {
 				var config = (!_.isString(key) ? key : { key : value });
 
 				this.config = _.defaults(config, this.config);
+			},
+
+			/**
+			 * Get a configuration value.
+			 * 
+			 * @param  {string} key
+			 * @param  {mixed}  defaults
+			 * @return {mixed}
+			 */
+			get: function get (key, defaults) {
+				if (_.isUndefined(defaults)) defaults = null;
+
+				return (!_.isUndefined(this.config[key]) ? this.config[key] : defaults);
 			}
 		};
 
