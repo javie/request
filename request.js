@@ -11,7 +11,7 @@
 
 	// At this point, we don't have a request wrapper for Node.js implementation. So it would be
 	// best to display an exception.
-	if ('undefined' !== typeof export) {
+	if ('undefined' !== typeof exports) {
 		throw new Error("Not supported");
 	}
 
