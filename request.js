@@ -6,7 +6,10 @@
 	root = this;
 
 	// Create a safe reference to Request object to be used below.
-	Request = {};
+	Request = function (name) {
+		return this.make(name);
+	};
+	
 	storage = {};
 
 	// At this point, we don't have a request wrapper for Node.js implementation. So it would be
