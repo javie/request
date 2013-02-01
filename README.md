@@ -1,4 +1,4 @@
-request
+Javie.Request
 =======
 
-Client-side and Node.js Request Helper
+Client-side Request Helper

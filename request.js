@@ -7,7 +7,7 @@
 
 	// Create a safe reference to Request object to be used below.
 	Request = function (name) {
-		return this.make(name);
+		return Request.make(name);
 	};
 	
 	storage = {};
