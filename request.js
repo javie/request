@@ -1,3 +1,14 @@
+/**
+ * Client-side Request Helper
+ * ==========================================================
+ *
+ * @package     Javie
+ * @require     underscore, jQuery/Zepto
+ * @since       0.1.1
+ * @author      Mior Muhammad Zaki <http://git.io/crynobone>
+ * @license     MIT License
+ */
+
 (function () { 'use strict'; 
 
 	var root, Request, _, api, ev, storage;
@@ -143,7 +154,7 @@
 			 * @return {self}
 			 */
 			to: function to (url, object, dataType) {
-				var own, r, t, u, tmp;
+				var own, r, type, uri, tmp;
 
 				own = this;
 
@@ -153,8 +164,8 @@
 
 				if (_.isNull(object)) object = root.document;
 
-				r = url.split(' ');
-				t = ['POST', 'GET', 'PUT', 'DELETE'];
+				r    = url.split(' ');
+				type = "GET";
 
 				own.put({
 					'name': name,
@@ -166,22 +177,27 @@
 					'object': object
 				});
 
-				if (r.length === 1) own.put('uri', r[0]);
+				if (r.length === 1) uri = r[0];
 				else {
-					if (_.indexOf(t, r[0]) > -1) own.put('type', r[0]);
+					if (_.indexOf(['POST', 'GET', 'PUT', 'DELETE'], r[0]) > -1) {
+						type = r[0];
+					}
 
-					own.put('uri', r[1]);
+					uri = r[1];
 
-					if (this.type !== 'GET') {
-						tmp = own.get('uri', '').split('?');
-
-						if (tmp.length > 0) {
-							own.put({
-								'query': tmp[1],
-								'uri': tmp[0]
-							});
+					if (type !== 'GET') {
+						tmp = uri.split('?');
+						
+						if (tmp.length > 1) {
+							uri = tmp[0];
+							own.put('query', tmp[1]);
 						}
 					}
+
+					own.put({
+						'type': type,
+						'uri': uri
+					});
 				}
 
 				own.put('id', '#'+api(own.get('object')).attr('id'));
@@ -203,19 +219,20 @@
 				var own, data;
 
 				own  = this;
-				data = api(this.get('object')).serialize()+'&'+this.get('query');
+				data = api(own.get('object')).serialize()+'&'+own.get('query');
 
-				this.executed = true;
+				if (data === '?&') data = '';
+
+				own.executed = true;
 
 				ev.fire('Request.beforeSend', [own]);
 				ev.fire('Request.beforeSend: '+name, [own]);
-
-				own.beforeSend(own);
+				own.config.beforeSend(own);
 
 				api.ajax({
-					'type': this.get('type'),
-					'dataType': this.get('dataType'),
-					'url': this.get('uri'),
+					'type': own.get('type'),
+					'dataType': own.get('dataType'),
+					'url': own.get('uri'),
 					'data': data,
 					'complete': function complete(xhr) {
 						var data, status;
@@ -228,15 +245,15 @@
 								ev.fire('Request.onError', [data.errors, status, own]);
 								ev.fire('Request.onError: '+name, [data.errors, status, own]);
 
-								own['onError'](data.errors, status, own);
+								own.config['onError'](data.errors, status, own);
 
 								data.errors = null;
 							}
 
-							ev.emit('Request.onComplete', [data, status, own]);
-							ev.emit('Request.onComplete: '+name, [data, status, own]);
+							ev.fire('Request.onComplete', [data, status, own]);
+							ev.fire('Request.onComplete: '+name, [data, status, own]);
 
-							own.onComplete(data, status, self);
+							own.config.onComplete(data, status, own);
 						}
 					}
 				});
@@ -267,7 +284,6 @@
 			 */
 			put: function put (key, value) {
 				var config = (!_.isString(key) ? key : { key : value });
-
 				this.config = _.defaults(config, this.config);
 			},
 
@@ -285,8 +301,7 @@
 			}
 		};
 
-		cache.config = _.defaults(cache.config, self.config);
-
+		cache.config  = _.defaults(cache.config, self.config);
 		storage[name] = cache;
 
 		return storage[name];
