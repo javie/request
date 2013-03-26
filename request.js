@@ -94,6 +94,25 @@
 	};
 
 	/**
+	 * Get Request configuration information.
+	 *
+	 * <code>
+	 * 		Request.get('baseUrl', 'http://foobar.com');
+	 * </code>
+	 * 
+	 * @param  {mixed} key
+	 * @param  {mixed} _default
+	 * @return {void}
+	 */
+	Request.get = function get (key, _default) {
+		if ( ! _.isSet(_default)) _default = null;
+
+		if ( ! _.isSet(this.config[key])) return _default;
+
+		return this.config[key];
+	};
+
+	/**
 	 * Make a new Request.
 	 *
 	 * <code>
