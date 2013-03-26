@@ -213,6 +213,8 @@
 						}
 					}
 
+					uri = uri.replace(':baseUrl', self.get('baseUrl', ''));
+
 					own.put({
 						'type': type,
 						'uri': uri
