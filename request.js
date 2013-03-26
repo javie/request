@@ -106,9 +106,9 @@
 	 * @return {void}
 	 */
 	Request.get = function get (key, _default) {
-		if ( ! _.isSet(_default)) _default = null;
+		if (_.isUndefined(_default)) _default = null;
 
-		if ( ! _.isSet(this.config[key])) return _default;
+		if (_.isUndefined(this.config[key])) return _default;
 
 		return this.config[key];
 	};
@@ -263,7 +263,7 @@
 							data   = parseJSON(xhr.responseText);
 							status = xhr.status;
 
-							if (data.hasOwnProperty('errors')) {
+							if ( ! _.isUndefined(data) && data.hasOwnProperty('errors')) {
 								ev.fire('Request.onError', [data.errors, status, own]);
 								ev.fire('Request.onError: '+name, [data.errors, status, own]);
 
