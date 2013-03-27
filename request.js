@@ -89,8 +89,13 @@
 	 * @return {void}
 	 */
 	Request.put = function put(key, value) {
-		var config = (!_.isString(key)) ? key : { key : value };
+		var config = key;
 
+		if ( ! _.isObject(config)) {
+			config = {};
+			config[key.toString()] = value;
+		}
+		
 		this.config = _.defaults(config, this.config);
 	};
 
