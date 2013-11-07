@@ -10,15 +10,14 @@
  * @license     MIT License
  */
 
-(function () { 'use strict';
-
+(function() { 'use strict';
 	var root, Request, _, api, dispatcher, storage;
 
 	// Save a reference to the global object (`window` in the browser, `global` on the server)
 	root = this;
 
 	// Create a safe reference to Request object to be used below.
-	Request = function (name) {
+	Request = function(name) {
 		return Request.make(name);
 	};
 
@@ -44,7 +43,9 @@
 	dispatcher = root.Javie.EventDispatcher.make();
 	_ = root._;
 
-	if ( ! _ && 'undefined' !== typeof require) _ = require('underscore');
+	if (!_ && 'undefined' !== typeof require) {
+		_ = require('underscore');
+	}
 
 	// Map jQuery or Zepto instance, but I'm not really into this dollar sign stuff since in
 	// this scope we are focusing on the `ajax` method available from these libraries.
@@ -55,7 +56,9 @@
 	}
 
 	function parseJSON(data) {
-		if (_.isString(data)) data = api.parseJSON(data);
+		if (_.isString(data)) {
+			data = api.parseJSON(data);
+		}
 
 		return data;
 	};
@@ -91,7 +94,7 @@
 	Request.put = function put(key, value) {
 		var config = key;
 
-		if ( ! _.isObject(config)) {
+		if (!_.isObject(config)) {
 			config = {};
 			config[key.toString()] = value;
 		}
@@ -110,10 +113,14 @@
 	 * @param  {mixed} _default
 	 * @return {void}
 	 */
-	Request.get = function get (key, _default) {
-		if (_.isUndefined(_default)) _default = null;
+	Request.get = function get(key, _default) {
+		if (_.isUndefined(_default)) {
+			_default = null;
+		}
 
-		if (_.isUndefined(this.config[key])) return _default;
+		if (_.isUndefined(this.config[key])) {
+			return _default;
+		}
 
 		return this.config[key];
 	};
@@ -137,7 +144,7 @@
 
 		// If cache is not empty, this mean that make was initiated before.
 		// we should create child instances if the request has been executed.
-		if ( ! _.isUndefined(storage[name])) {
+		if (!_.isUndefined(storage[name])) {
 			parent = storage[name];
 
 			// If parent has been executed, we need to create a child instance.
@@ -178,7 +185,7 @@
 			 * @param  {string}      dataType e.g: JSON, XML etc.
 			 * @return {self}
 			 */
-			to: function to (url, object, dataType) {
+			to: function to(url, object, dataType) {
 				var own, r, type, uri, tmp;
 
 				own = this;
@@ -242,7 +249,7 @@
 			 *
 			 * @return {void}
 			 */
-			execute: function execute () {
+			execute: function execute() {
 				var own, data;
 
 				own  = this;
@@ -268,7 +275,7 @@
 							data   = parseJSON(xhr.responseText);
 							status = xhr.status;
 
-							if ( ! _.isUndefined(data) && data.hasOwnProperty('errors')) {
+							if (! _.isUndefined(data) && data.hasOwnProperty('errors')) {
 								dispatcher.fire('Request.onError', [data.errors, status, own]);
 								dispatcher.fire('Request.onError: '+name, [data.errors, status, own]);
 
@@ -309,8 +316,8 @@
 			 * @param  {mixed} value
 			 * @return {void}
 			 */
-			put: function put (key, value) {
-				var config = ( ! _.isString(key) ? key : { key : value });
+			put: function put(key, value) {
+				var config = (!_.isString(key) ? key : { key : value });
 				this.config = _.defaults(config, this.config);
 			},
 
@@ -321,10 +328,10 @@
 			 * @param  {mixed}  defaults
 			 * @return {mixed}
 			 */
-			get: function get (key, defaults) {
+			get: function get(key, defaults) {
 				if (_.isUndefined(defaults)) defaults = null;
 
-				return ( ! _.isUndefined(this.config[key]) ? this.config[key] : defaults);
+				return (! _.isUndefined(this.config[key]) ? this.config[key] : defaults);
 			}
 		};
 
