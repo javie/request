@@ -10,9 +10,9 @@
  * @license     MIT License
  */
 
-(function () { 'use strict'; 
+(function () { 'use strict';
 
-	var root, Request, _, api, ev, storage;
+	var root, Request, _, api, dispatcher, storage;
 
 	// Save a reference to the global object (`window` in the browser, `global` on the server)
 	root = this;
@@ -21,7 +21,7 @@
 	Request = function (name) {
 		return Request.make(name);
 	};
-	
+
 	storage = {};
 
 	// At this point, we don't have a request wrapper for Node.js implementation. So it would be
@@ -31,22 +31,22 @@
 	}
 
 	if ('undefined' === typeof root.Javie) {
-		throw new Error("Javie is required before using Javie.Request");
+		throw new Error("Javie is missing");
 	}
 
 	root.Javie.Request = Request;
 
-	if ('undefined' === typeof root.Javie.Events) {
-		throw new Error("Javie is missing Logger and Events");
+	if ('undefined' === typeof root.Javie.EventDispatcher) {
+		throw new Error("Javie.EventDispatcher is missing");
 	}
 
 	// Load all the dependencies
-	ev  = root.Javie.Events.make();
-	_   = root._;
+	dispatcher = root.Javie.EventDispatcher.make();
+	_ = root._;
 
-	if (!_ && 'undefined' !== typeof require) _ = require('underscore');
-	
-	// Map jQuery or Zepto instance, but I'm not really into this dollar sign stuff since in 
+	if ( ! _ && 'undefined' !== typeof require) _ = require('underscore');
+
+	// Map jQuery or Zepto instance, but I'm not really into this dollar sign stuff since in
 	// this scope we are focusing on the `ajax` method available from these libraries.
 	api = root.$;
 
@@ -62,7 +62,7 @@
 
 	/**
 	 * Request configuration.
-	 * 
+	 *
 	 * @type {Object}
 	 */
 	Request.config = {
@@ -83,7 +83,7 @@
 	 * 			'onError' : function (data, status) { // do something awesome }
 	 * 		});
 	 * </code>
-	 * 
+	 *
 	 * @param  {mixed} key
 	 * @param  {mixed} value
 	 * @return {void}
@@ -95,7 +95,7 @@
 			config = {};
 			config[key.toString()] = value;
 		}
-		
+
 		this.config = _.defaults(config, this.config);
 	};
 
@@ -105,7 +105,7 @@
 	 * <code>
 	 * 		Request.get('baseUrl', 'http://foobar.com');
 	 * </code>
-	 * 
+	 *
 	 * @param  {mixed} key
 	 * @param  {mixed} _default
 	 * @return {void}
@@ -124,20 +124,20 @@
 	 * <code>
 	 * 		var r = Javie.Request.make('foo');
 	 * </code>
-	 * 
+	 *
 	 * @param  {string} name
 	 * @return {void}
 	 */
 	Request.make = function make(name) {
 		var cache, child, childName, parent, self;
 
-		if (!_.isString(name)) name = 'default';
+		if ( ! _.isString(name)) name = 'default';
 
 		self = this;
 
 		// If cache is not empty, this mean that make was initiated before.
 		// we should create child instances if the request has been executed.
-		if (!_.isUndefined(storage[name])) {
+		if ( ! _.isUndefined(storage[name])) {
 			parent = storage[name];
 
 			// If parent has been executed, we need to create a child instance.
@@ -146,9 +146,9 @@
 				child     = self.make(childName);
 
 				// Replicate all parent configuration to child.
-				ev.clone('Request.onError: '+name).to('Request.onError: '+childName);
-				ev.clone('Request.onComplete: '+name).to('Request.onComplete: '+childName);
-				ev.clone('Request.beforeSend: '+name).to('Request.beforeSend: '+childName);
+				dispatcher.clone('Request.onError: '+name).to('Request.onError: '+childName);
+				dispatcher.clone('Request.onComplete: '+name).to('Request.onComplete: '+childName);
+				dispatcher.clone('Request.beforeSend: '+name).to('Request.beforeSend: '+childName);
 
 				child.put(parent.config);
 
@@ -161,18 +161,18 @@
 		cache = {
 			/**
 			 * Execution status.
-			 * 
+			 *
 			 * @type {Boolean}
 			 */
 			executed: false,
-			
+
 			/**
 			 * Create a request wrapper for a form.
 			 *
 			 * <code>
 			 * 		r.to('GET http://google.com?q=foobar', document.getElementById('foo'), 'JSON');
 			 * </code>
-			 * 
+			 *
 			 * @param  {string}      url
 			 * @param  {DOMDocument} object
 			 * @param  {string}      dataType e.g: JSON, XML etc.
@@ -197,7 +197,7 @@
 					'type': 'GET',
 					'query': '',
 					'data': '',
-					'dataType': (!_.isUndefined(dataType) ? dataType : 'json'),
+					'dataType': ( ! _.isUndefined(dataType) ? dataType : 'json'),
 					'id': '',
 					'object': object
 				});
@@ -212,7 +212,7 @@
 
 					if (type !== 'GET') {
 						tmp = uri.split('?');
-						
+
 						if (tmp.length > 1) {
 							uri = tmp[0];
 							own.put('query', tmp[1]);
@@ -239,7 +239,7 @@
 			 * <code>
 			 * 		r.execute();
 			 * </code>
-			 * 
+			 *
 			 * @return {void}
 			 */
 			execute: function execute () {
@@ -252,8 +252,8 @@
 
 				own.executed = true;
 
-				ev.fire('Request.beforeSend', [own]);
-				ev.fire('Request.beforeSend: '+name, [own]);
+				dispatcher.fire('Request.beforeSend', [own]);
+				dispatcher.fire('Request.beforeSend: '+name, [own]);
 				own.config.beforeSend(own);
 
 				api.ajax({
@@ -269,16 +269,16 @@
 							status = xhr.status;
 
 							if ( ! _.isUndefined(data) && data.hasOwnProperty('errors')) {
-								ev.fire('Request.onError', [data.errors, status, own]);
-								ev.fire('Request.onError: '+name, [data.errors, status, own]);
+								dispatcher.fire('Request.onError', [data.errors, status, own]);
+								dispatcher.fire('Request.onError: '+name, [data.errors, status, own]);
 
 								own.config['onError'](data.errors, status, own);
 
 								data.errors = null;
 							}
 
-							ev.fire('Request.onComplete', [data, status, own]);
-							ev.fire('Request.onComplete: '+name, [data, status, own]);
+							dispatcher.fire('Request.onComplete', [data, status, own]);
+							dispatcher.fire('Request.onComplete: '+name, [data, status, own]);
 
 							own.config.onComplete(data, status, own);
 						}
@@ -304,19 +304,19 @@
 
 			/**
 			 * Update or overwrite a configuration.
-			 * 
+			 *
 			 * @param  {mixed} key
 			 * @param  {mixed} value
 			 * @return {void}
 			 */
 			put: function put (key, value) {
-				var config = (!_.isString(key) ? key : { key : value });
+				var config = ( ! _.isString(key) ? key : { key : value });
 				this.config = _.defaults(config, this.config);
 			},
 
 			/**
 			 * Get a configuration value.
-			 * 
+			 *
 			 * @param  {string} key
 			 * @param  {mixed}  defaults
 			 * @return {mixed}
@@ -324,7 +324,7 @@
 			get: function get (key, defaults) {
 				if (_.isUndefined(defaults)) defaults = null;
 
-				return (!_.isUndefined(this.config[key]) ? this.config[key] : defaults);
+				return ( ! _.isUndefined(this.config[key]) ? this.config[key] : defaults);
 			}
 		};
 
