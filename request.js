@@ -96,8 +96,10 @@
     };
 
     Request.prototype.to = function(url, object, data_type) {
-      var queries, request_method, segment, type, uri;
-      this.put('dataType', data_type != null ? data_type : data_type = 'json');
+      var id, queries, request_method, segment, type, uri;
+      this.put({
+        'dataType': data_type != null ? data_type : data_type = 'json'
+      });
       request_method = ['POST', 'GET', 'PUT', 'DELETE'];
       if (typeof url === 'undefined') {
         throw new Error("Missing required url parameter");
@@ -126,7 +128,12 @@
           'uri': uri
         });
       }
-      this.put('id', "#" + (api(this.get('object')).attr('id')));
+      id = api(this.get('object')).attr('id');
+      if (typeof id !== 'undefined') {
+        this.put({
+          'id': "#" + id
+        });
+      }
       return this;
     };
 
@@ -191,7 +198,9 @@
       } else {
         request = new Request;
         request.config = _.defaults(request.config, RequestRepository.config);
-        request.put('name', name);
+        request.put({
+          'name': name
+        });
         requests[name] = request;
       }
       return request;
@@ -228,9 +237,10 @@
     RequestRepository.put = function(key, value) {
       var config;
       config = key;
-      if (!_.isObject(config)) {
-        config = {};
-        config[key.toString()] = value;
+      if (!_.isObject(key)) {
+        config = {
+          key: value
+        };
       }
       return this.config = _.defaults(config, this.config);
     };

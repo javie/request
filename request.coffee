@@ -61,7 +61,7 @@ class Request
 				key: value
 		@config = _.defaults(config, @config)
 	to: (url, object, data_type) ->
-		@put('dataType', data_type ?= 'json')
+		@put({'dataType': data_type ?= 'json'})
 		request_method = ['POST', 'GET', 'PUT', 'DELETE']
 
 		if typeof url is 'undefined'
@@ -93,7 +93,8 @@ class Request
 				'uri': uri
 			})
 
-		@put('id', "##{api(@get('object')).attr('id')}")
+		id = api(@get('object')).attr('id')
+		@put({'id': "##{id}"}) if typeof id isnt 'undefined'
 		@
 	execute: ->
 		self = @
@@ -149,7 +150,7 @@ class RequestRepository
 		else
 			request = new Request
 			request.config = _.defaults(request.config, RequestRepository.config)
-			request.put('name', name)
+			request.put({'name': name})
 			requests[name] = request
 
 		request
@@ -170,9 +171,9 @@ class RequestRepository
 		@config[key]
 	@put: (key, value) ->
 		config = key
-		unless _.isObject(config)
-			config = {}
-			config[key.toString()] = value
+		unless _.isObject(key)
+			config =
+				key: value
 		@config = _.defaults(config, @config)
 
 if exports?
