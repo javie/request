@@ -1,10 +1,14 @@
 ###
  * ==========================================================
- * Javie.Request: Client-side Request Helper
+ * Javie.Request
  * ==========================================================
+ *
+ * Request Helper for Client-side JavaScript
+ *
  * @package Javie
+ * @class   Request
  * @require underscore, jQuery/Zepto
- * @version 1.0.1
+ * @version 1.1.0-dev
  * @since   0.1.1
  * @author  Mior Muhammad Zaki <https://github.com/crynobone>
  * @license MIT
@@ -156,6 +160,9 @@ class Request
 class RequestRepository
 	constructor: (name) ->
 		return RequestRepository.make(name)
+	@make: (name) ->
+		name = 'default' unless _.isString(name)
+		find_request(name)
 	@config:
 		'baseUrl': null
 		'onError': (data, status) ->
@@ -173,9 +180,6 @@ class RequestRepository
 			config[key.toString()] = value
 
 		@config = _.defaults(config, @config)
-	@make: (name) ->
-		name = 'default' unless _.isString(name)
-		find_request(name)
 
 if exports?
 	module.exports = RequestRepository if module? and module.exports
