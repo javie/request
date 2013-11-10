@@ -1,0 +1,5 @@
+{
+	"require-dev": {
+		"packagist/yuicompressor-bin": "2.4.8"
+	}
+}

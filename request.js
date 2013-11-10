@@ -1,344 +1,234 @@
-/**
- * Client-side Request Helper
- * ==========================================================
- *
- * @package     Javie
- * @require     underscore, jQuery/Zepto
- * @version     1.0.1
- * @since       0.1.1
- * @author      Mior Muhammad Zaki <http://git.io/crynobone>
- * @license     MIT License
- */
-
-(function() { 'use strict';
-	var root, Request, _, api, dispatcher, storage;
-
-	// Save a reference to the global object (`window` in the browser, `global` on the server)
-	root = this;
-
-	// Create a safe reference to Request object to be used below.
-	Request = function(name) {
-		return Request.make(name);
-	};
-
-	storage = {};
-
-	// At this point, we don't have a request wrapper for Node.js implementation. So it would be
-	// best to display an exception.
-	if ('undefined' !== typeof exports) {
-		throw new Error("Not supported");
-	}
-
-	if ('undefined' === typeof root.Javie) {
-		throw new Error("Javie is missing");
-	}
-
-	root.Javie.Request = Request;
-
-	if ('undefined' === typeof root.Javie.EventDispatcher) {
-		throw new Error("Javie.EventDispatcher is missing");
-	}
-
-	// Load all the dependencies
-	dispatcher = root.Javie.EventDispatcher.make();
-	_ = root._;
-
-	if (!_ && 'undefined' !== typeof require) {
-		_ = require('underscore');
-	}
-
-	// Map jQuery or Zepto instance, but I'm not really into this dollar sign stuff since in
-	// this scope we are focusing on the `ajax` method available from these libraries.
-	api = root.$;
-
-	if ('undefined' === typeof api || null === api) {
-		throw new Error("Required jQuery or Zepto object is not available.");
-	}
-
-	function parseJSON(data) {
-		if (_.isString(data)) {
-			data = api.parseJSON(data);
-		}
-
-		return data;
-	};
-
-	/**
-	 * Request configuration.
-	 *
-	 * @type {Object}
-	 */
-	Request.config = {
-		'baseUrl': null,
-		'onError': function onError (data, status) {},
-		'beforeSend': function beforeSend (data, status) {},
-		'onComplete': function onComplete (data, status) {}
-	};
-
-	/**
-	 * Update Request configuration information.
-	 *
-	 * <code>
-	 * 		Request.put('baseUrl', 'http://foobar.com');
-	 *
-	 * 		Request.put({
-	 * 			'baseUrl' : 'http://foobar.com',
-	 * 			'onError' : function (data, status) { // do something awesome }
-	 * 		});
-	 * </code>
-	 *
-	 * @param  {mixed} key
-	 * @param  {mixed} value
-	 * @return {void}
-	 */
-	Request.put = function put(key, value) {
-		var config = key;
-
-		if (!_.isObject(config)) {
-			config = {};
-			config[key.toString()] = value;
-		}
-
-		this.config = _.defaults(config, this.config);
-	};
-
-	/**
-	 * Get Request configuration information.
-	 *
-	 * <code>
-	 * 		Request.get('baseUrl', 'http://foobar.com');
-	 * </code>
-	 *
-	 * @param  {mixed} key
-	 * @param  {mixed} _default
-	 * @return {void}
-	 */
-	Request.get = function get(key, _default) {
-		if (_.isUndefined(_default)) {
-			_default = null;
-		}
-
-		if (_.isUndefined(this.config[key])) {
-			return _default;
-		}
-
-		return this.config[key];
-	};
-
-	/**
-	 * Make a new Request.
-	 *
-	 * <code>
-	 * 		var r = Javie.Request.make('foo');
-	 * </code>
-	 *
-	 * @param  {string} name
-	 * @return {void}
-	 */
-	Request.make = function make(name) {
-		var cache, child, childName, parent, self;
-
-		if ( ! _.isString(name)) name = 'default';
-
-		self = this;
-
-		// If cache is not empty, this mean that make was initiated before.
-		// we should create child instances if the request has been executed.
-		if (!_.isUndefined(storage[name])) {
-			parent = storage[name];
-
-			// If parent has been executed, we need to create a child instance.
-			if (parent.executed === true) {
-				childName = _.uniqueId(name+'_');
-				child     = self.make(childName);
-
-				// Replicate all parent configuration to child.
-				dispatcher.clone('Request.onError: '+name).to('Request.onError: '+childName);
-				dispatcher.clone('Request.onComplete: '+name).to('Request.onComplete: '+childName);
-				dispatcher.clone('Request.beforeSend: '+name).to('Request.beforeSend: '+childName);
-
-				child.put(parent.config);
-
-				return child;
-			}
-
-			return parent;
-		}
-
-		cache = {
-			/**
-			 * Execution status.
-			 *
-			 * @type {Boolean}
-			 */
-			executed: false,
-
-			/**
-			 * Create a request wrapper for a form.
-			 *
-			 * <code>
-			 * 		r.to('GET http://google.com?q=foobar', document.getElementById('foo'), 'JSON');
-			 * </code>
-			 *
-			 * @param  {string}      url
-			 * @param  {DOMDocument} object
-			 * @param  {string}      dataType e.g: JSON, XML etc.
-			 * @return {self}
-			 */
-			to: function to(url, object, dataType) {
-				var own, r, type, uri, tmp;
-
-				own = this;
-
-				if (_.isUndefined(url)) {
-					throw new Error('Missing required parameter.');
-				}
-
-				if (_.isNull(object)) object = root.document;
-
-				r    = url.split(' ');
-				type = "GET";
-
-				own.put({
-					'name': name,
-					'type': 'GET',
-					'query': '',
-					'data': '',
-					'dataType': ( ! _.isUndefined(dataType) ? dataType : 'json'),
-					'id': '',
-					'object': object
-				});
-
-				if (r.length === 1) uri = r[0];
-				else {
-					if (_.indexOf(['POST', 'GET', 'PUT', 'DELETE'], r[0]) > -1) {
-						type = r[0];
-					}
-
-					uri = r[1];
-
-					if (type !== 'GET') {
-						tmp = uri.split('?');
-
-						if (tmp.length > 1) {
-							uri = tmp[0];
-							own.put('query', tmp[1]);
-						}
-					}
-
-					uri = uri.replace(':baseUrl', self.get('baseUrl', ''));
-
-					own.put({
-						'type': type,
-						'uri': uri
-					});
-				}
-
-				own.put('id', '#'+api(own.get('object')).attr('id'));
-
-				return this;
-
-			},
-
-			/**
-			 * Execute the request.
-			 *
-			 * <code>
-			 * 		r.execute();
-			 * </code>
-			 *
-			 * @return {void}
-			 */
-			execute: function execute() {
-				var own, data;
-
-				own  = this;
-				data = api(own.get('object')).serialize()+'&'+own.get('query');
-
-				if (data === '?&') data = '';
-
-				own.executed = true;
-
-				dispatcher.fire('Request.beforeSend', [own]);
-				dispatcher.fire('Request.beforeSend: '+name, [own]);
-				own.config.beforeSend(own);
-
-				api.ajax({
-					'type': own.get('type'),
-					'dataType': own.get('dataType'),
-					'url': own.get('uri'),
-					'data': data,
-					'complete': function complete(xhr) {
-						var data, status;
-
-						if (xhr.responseText !== '') {
-							data   = parseJSON(xhr.responseText);
-							status = xhr.status;
-
-							if (! _.isUndefined(data) && data.hasOwnProperty('errors')) {
-								dispatcher.fire('Request.onError', [data.errors, status, own]);
-								dispatcher.fire('Request.onError: '+name, [data.errors, status, own]);
-
-								own.config['onError'](data.errors, status, own);
-
-								data.errors = null;
-							}
-
-							dispatcher.fire('Request.onComplete', [data, status, own]);
-							dispatcher.fire('Request.onComplete: '+name, [data, status, own]);
-
-							own.config.onComplete(data, status, own);
-						}
-					}
-				});
-			},
-
-			/**
-			 * Request configurations.
-			 *
-			 * @type {Object}
-			 */
-			config: {
-				'name': '',
-				'type': 'GET',
-				'uri': '',
-				'query': '',
-				'data': '',
-				'dataType': 'json',
-				'id': '',
-				'object': null
-			},
-
-			/**
-			 * Update or overwrite a configuration.
-			 *
-			 * @param  {mixed} key
-			 * @param  {mixed} value
-			 * @return {void}
-			 */
-			put: function put(key, value) {
-				var config = (!_.isString(key) ? key : { key : value });
-				this.config = _.defaults(config, this.config);
-			},
-
-			/**
-			 * Get a configuration value.
-			 *
-			 * @param  {string} key
-			 * @param  {mixed}  defaults
-			 * @return {mixed}
-			 */
-			get: function get(key, defaults) {
-				if (_.isUndefined(defaults)) defaults = null;
-
-				return (! _.isUndefined(this.config[key]) ? this.config[key] : defaults);
-			}
-		};
-
-		cache.config  = _.defaults(cache.config, self.config);
-		storage[name] = cache;
-
-		return storage[name];
-	};
+// Generated by CoffeeScript 1.6.3
+(function() {
+  var Request, RequestRepository, api, events, find_request, histories, json_parse, root, _;
+
+  root = typeof exports !== "undefined" && exports !== null ? exports : this;
+
+  histories = {};
+
+  events = null;
+
+  if (typeof root.Javie === 'undefined') {
+    throw new Error("Javie is missing");
+  }
+
+  if (typeof root.Javie.EventDispatcher === 'undefined') {
+    throw new Error("Javie.EventDispatcher is missing");
+  }
+
+  events = root.Javie.EventDispatcher.make();
+
+  _ = root._;
+
+  if (!_ && (typeof require !== "undefined" && require !== null)) {
+    _ = require('underscore');
+  }
+
+  if (!_) {
+    throw new Error("underscore.js is missing");
+  }
+
+  api = root.$;
+
+  if (typeof api === 'undefined' || api === null) {
+    throw new Error("Required jQuery or Zepto object is missing");
+  }
+
+  json_parse = function(data) {
+    if (_.isString(data) === true) {
+      data = api.parseJSON(data);
+    }
+    return data;
+  };
+
+  find_request = function(name) {
+    var child, child_name, instance, parent, request;
+    request = null;
+    if (typeof histories[name] !== 'undefined') {
+      parent = histories[name];
+      if (parent.executed === true) {
+        child_name = _.uniqueId("" + name + "_");
+        child = new Request;
+        events.clone("Request.onError: " + name).to("Request.onError: " + child_name);
+        events.clone("Request.onComplete: " + name).to("Request.onComplete: " + child_name);
+        events.clone("Request.beforeSend: " + name).to("Request.beforeSend: " + child_name);
+        child.put(parent.config);
+        instance = child;
+      }
+      instance = parent;
+    } else {
+      instance = new Request;
+      instance.config = _.defaults(instance.config, RequestRepository.config);
+      histories[name] = instance;
+    }
+    return instance;
+  };
+
+  Request = (function() {
+    function Request() {}
+
+    Request.prototype.executed = false;
+
+    Request.prototype.config = {
+      'name': '',
+      'type': 'GET',
+      'uri': '',
+      'query': '',
+      'data': '',
+      'dataType': 'json',
+      'id': '',
+      'object': null
+    };
+
+    Request.prototype.get = function(key, alt) {
+      if (typeof this.config[key] !== 'undefined') {
+        return this.config[key];
+      }
+      return alt != null ? alt : alt = null;
+    };
+
+    Request.prototype.put = function(key, alt) {
+      var config;
+      config = key;
+      if (!_.isString(key)) {
+        config = {
+          key: value
+        };
+      }
+      return this.config = _.defaults(config, this.config);
+    };
+
+    Request.prototype.to = function(url, object, data_type) {
+      var queries, request_method, segment, type, uri;
+      if (data_type == null) {
+        data_type = 'json';
+      }
+      request_method = ['POST', 'GET', 'PUT', 'DELETE'];
+      if (typeof url === 'undefined') {
+        throw new Error("Missing required url parameter");
+      }
+      if (object == null) {
+        object = root.document;
+      }
+      segment = url.split(' ');
+      this.put({
+        'name': name,
+        'dataType': data_type
+      });
+      if (segment.length === 1) {
+        uri = segment[0];
+      } else {
+        if (_.indexOf(request_method, segment[0]) === true) {
+          type = segment[0];
+        }
+        uri = segment[1];
+        if (type !== 'GET') {
+          queries = uri.split('?');
+          if (queries.length > 1) {
+            url = queries[0];
+            this.put('query', queries[1]);
+          }
+        }
+        uri = uri.replace(':baseUrl', this.get('baseUrl', ''));
+        this.put({
+          'type': type,
+          'uri': uri
+        });
+      }
+      this.put('id', "#" + (api(this.get('object')).attr('id')));
+      return this;
+    };
+
+    Request.prototype.execute = function() {
+      var data, request, self;
+      self = this;
+      data = "" + (api(this.get('object')).serialize()) + "&" + (this.get('query'));
+      if (data === '?&') {
+        data = '';
+      }
+      this.execute = true;
+      events.fire('Request.beforeSend', [this]);
+      events.fire("Request.beforeSend: " + name, [this]);
+      this.config['beforeSend'](this);
+      request = {
+        'type': this.get('type'),
+        'dataType': this.get('dataType'),
+        'url': this.get('uri'),
+        'data': data,
+        'complete': function(xhr) {
+          var status;
+          data = json_parse(xhr.responseText);
+          status = xhr.status;
+          if (typeof data !== 'undefined' && data.hasOwnProperty('errors')) {
+            events.fire('Request.onError', [data.errors, status, self]);
+            events.fire("Request.onError: " + name, [data.errors, status, self]);
+            this.config['onError'](data.errors, status, self);
+            data.errors = null;
+          }
+          events.fire('Request.onComplete', [data, status, self]);
+          events.fire("Request.onComplete: " + name, [data, status, self]);
+          this.config['onComplete'](data, status, self);
+          return true;
+        }
+      };
+      api.ajax(request);
+      return true;
+    };
+
+    return Request;
+
+  })();
+
+  RequestRepository = (function() {
+    function RequestRepository(name) {
+      return RequestRepository.make(name);
+    }
+
+    RequestRepository.config = {
+      'baseUrl': null,
+      'onError': function(data, status) {},
+      'beforeSend': function(data, status) {},
+      'onComplete': function(data, status) {}
+    };
+
+    RequestRepository.get = function(key, alt) {
+      if (alt == null) {
+        alt = null;
+      }
+      if (typeof this.config[key] === 'undefined') {
+        return alt;
+      }
+      return this.config[key];
+    };
+
+    RequestRepository.put = function(key, value) {
+      var config;
+      config = key;
+      if (!_.isObject(config)) {
+        config = {};
+        config[key.toString()] = value;
+      }
+      return this.config = _.defaults(config, this.config);
+    };
+
+    RequestRepository.make = function(name) {
+      if (!_.isString(name)) {
+        name = 'default';
+      }
+      return find_request(name);
+    };
+
+    return RequestRepository;
+
+  })();
+
+  if (typeof exports !== "undefined" && exports !== null) {
+    if ((typeof module !== "undefined" && module !== null) && module.exports) {
+      module.exports = RequestRepository;
+    }
+    root.Request = RequestRepository;
+  } else {
+    root.Javie.Request = RequestRepository;
+  }
 
 }).call(this);
