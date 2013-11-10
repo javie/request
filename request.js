@@ -105,7 +105,7 @@
       return alt != null ? alt : alt = null;
     };
 
-    Request.prototype.put = function(key, alt) {
+    Request.prototype.put = function(key, value) {
       var config;
       config = key;
       if (!_.isString(key)) {

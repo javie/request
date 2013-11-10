@@ -78,7 +78,7 @@ class Request
 	get: (key, alt) ->
 		return @config[key] if typeof @config[key] isnt 'undefined'
 		alt ?= null
-	put: (key, alt) ->
+	put: (key, value) ->
 		config = key
 		unless _.isString(key)
 			config =
