@@ -1,5 +1,5 @@
 root = exports ? @
-histories = {}
+requests = {}
 events = null
 
 unless typeof root.Javie isnt 'undefined'
@@ -26,8 +26,8 @@ json_parse = (data) ->
 
 find_request = (name) ->
 	request = null
-	unless typeof histories[name] is 'undefined'
-		parent = histories[name]
+	unless typeof requests[name] is 'undefined'
+		parent = requests[name]
 
 		if parent.executed is yes
 			child_name = _.uniqueId("#{name}_")
@@ -43,7 +43,7 @@ find_request = (name) ->
 	else
 		instance = new Request
 		instance.config = _.defaults(instance.config, RequestRepository.config)
-		histories[name] = instance
+		requests[name] = instance
 
 	instance
 
@@ -137,9 +137,8 @@ class Request
 				@config['onComplete'](data, status, self)
 
 				true
-
 		api.ajax(request)
-		true
+		@
 
 class RequestRepository
 	constructor: (name) ->
