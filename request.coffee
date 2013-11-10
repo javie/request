@@ -1,3 +1,16 @@
+###
+ * ==========================================================
+ * Javie.Request: Client-side Request Helper
+ * ==========================================================
+ * @package Javie
+ * @require underscore, jQuery/Zepto
+ * @version 1.0.1
+ * @since   0.1.1
+ * @author  Mior Muhammad Zaki <https://github.com/crynobone>
+ * @license MIT
+ * ==========================================================
+###
+
 root = exports ? @
 requests = {}
 events = null
@@ -129,12 +142,12 @@ class Request
 				if typeof data isnt 'undefined' and data.hasOwnProperty('errors')
 					events.fire('Request.onError', [data.errors, status, self])
 					events.fire("Request.onError: #{name}", [data.errors, status, self])
-					@config['onError'](data.errors, status, self)
+					self.config['onError'](data.errors, status, self)
 					data.errors = null
 
 				events.fire('Request.onComplete', [data, status, self])
 				events.fire("Request.onComplete: #{name}", [data, status, self])
-				@config['onComplete'](data, status, self)
+				self.config['onComplete'](data, status, self)
 
 				true
 		api.ajax(request)

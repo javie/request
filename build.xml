@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <project name="javie/request" basedir="." default="build">
-    <target name="build" description="Minify the JS">
+    <target name="minify" description="Minify the JS">
         <exec executable="java">
             <arg value="-jar"/>
             <arg value="${basedir}/vendor/packagist/yuicompressor-bin/bin/yuicompressor.jar"/>
@@ -15,4 +15,5 @@
             <arg value="${basedir}/request.js"/>
         </exec>
     </target>
+    <target name="build" depends="minify"/>
 </project>
