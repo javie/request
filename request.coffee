@@ -56,7 +56,7 @@ class Request
 		alt ?= null
 	put: (key, value) ->
 		config = key
-		unless _.isString(key)
+		unless _.isObject(key)
 			config =
 				key: value
 		@config = _.defaults(config, @config)
@@ -104,7 +104,7 @@ class Request
 		data = "#{api(@get('object')).serialize()}&#{@get('query')}"
 		data = '' if data is '?&'
 
-		@execute = true
+		@executed = true
 
 		events.fire('Request.beforeSend', [@])
 		events.fire("Request.beforeSend: #{name}", [@])
@@ -153,7 +153,6 @@ class RequestRepository
 		else
 			request = new Request
 			request.config = _.defaults(request.config, RequestRepository.config)
-			console.log(request.config)
 			requests[name] = request
 
 		request
@@ -174,11 +173,9 @@ class RequestRepository
 		@config[key]
 	@put: (key, value) ->
 		config = key
-
 		unless _.isObject(config)
 			config = {}
 			config[key.toString()] = value
-
 		@config = _.defaults(config, @config)
 
 if exports?

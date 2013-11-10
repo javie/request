@@ -87,7 +87,7 @@
     Request.prototype.put = function(key, value) {
       var config;
       config = key;
-      if (!_.isString(key)) {
+      if (!_.isObject(key)) {
         config = {
           key: value
         };
@@ -143,7 +143,7 @@
       if (data === '?&') {
         data = '';
       }
-      this.execute = true;
+      this.executed = true;
       events.fire('Request.beforeSend', [this]);
       events.fire("Request.beforeSend: " + name, [this]);
       this.config['beforeSend'](this);
@@ -197,7 +197,6 @@
       } else {
         request = new Request;
         request.config = _.defaults(request.config, RequestRepository.config);
-        console.log(request.config);
         requests[name] = request;
       }
       return request;
