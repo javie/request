@@ -55,6 +55,8 @@
   Request = (function() {
     var json_parse;
 
+    function Request() {}
+
     json_parse = function(data) {
       if (_.isString(data) === true) {
         data = api.parseJSON(data);
@@ -74,10 +76,6 @@
       'id': '',
       'object': null
     };
-
-    function Request(name) {
-      this.put('name', name);
-    }
 
     Request.prototype.get = function(key, alt) {
       if (typeof this.config[key] !== 'undefined') {
@@ -191,8 +189,9 @@
         }
         request = parent;
       } else {
-        request = new Request(name);
+        request = new Request;
         request.config = _.defaults(request.config, RequestRepository.config);
+        request.put('name', name);
         requests[name] = request;
       }
       return request;

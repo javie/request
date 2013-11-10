@@ -51,8 +51,6 @@ class Request
 		'dataType': 'json'
 		'id': ''
 		'object': null
-	constructor: (name) ->
-		@put('name', name)
 	get: (key, alt) ->
 		return @config[key] if typeof @config[key] isnt 'undefined'
 		alt ?= null
@@ -149,8 +147,9 @@ class RequestRepository
 				request = child
 			request = parent
 		else
-			request = new Request(name)
+			request = new Request
 			request.config = _.defaults(request.config, RequestRepository.config)
+			request.put('name', name)
 			requests[name] = request
 
 		request
