@@ -37,34 +37,10 @@ api = root.$
 if typeof api is 'undefined' or api is null
 	throw new Error("Required jQuery or Zepto object is missing")
 
-json_parse = (data) ->
-	data = api.parseJSON(data) if _.isString(data) is yes
-	data
-
-find_request = (name) ->
-	request = null
-	unless typeof requests[name] is 'undefined'
-		parent = requests[name]
-
-		if parent.executed is yes
-			child_name = _.uniqueId("#{name}_")
-			child = new Request
-
-			events.clone("Request.onError: #{name}").to("Request.onError: #{child_name}");
-			events.clone("Request.onComplete: #{name}").to("Request.onComplete: #{child_name}");
-			events.clone("Request.beforeSend: #{name}").to("Request.beforeSend: #{child_name}");
-
-			child.put(parent.config)
-			instance = child
-		instance = parent
-	else
-		instance = new Request
-		instance.config = _.defaults(instance.config, RequestRepository.config)
-		requests[name] = instance
-
-	instance
-
 class Request
+	json_parse = (data) ->
+		data = api.parseJSON(data) if _.isString(data) is yes
+		data
 	executed: false
 	config:
 		'name': ''
@@ -158,6 +134,30 @@ class Request
 		@
 
 class RequestRepository
+	find_request = (name) ->
+		request = null
+		unless typeof requests[name] is 'undefined'
+			parent = requests[name]
+
+			if parent.executed is yes
+				child_name = _.uniqueId("#{name}_")
+				child = new Request
+
+				events.clone("Request.onError: #{name}").to("Request.onError: #{child_name}");
+				events.clone("Request.onComplete: #{name}").to("Request.onComplete: #{child_name}");
+				events.clone("Request.beforeSend: #{name}").to("Request.beforeSend: #{child_name}");
+
+				child.put(parent.config)
+				request = child
+			request = parent
+		else
+			request = new Request
+			request.config = _.defaults(request.config, RequestRepository.config)
+			console.log(request.config)
+			requests[name] = request
+
+		request
+
 	constructor: (name) ->
 		return RequestRepository.make(name)
 	@make: (name) ->

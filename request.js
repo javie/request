@@ -18,7 +18,7 @@
 
 
 (function() {
-  var Request, RequestRepository, api, events, find_request, json_parse, requests, root, _;
+  var Request, RequestRepository, api, events, requests, root, _;
 
   root = typeof exports !== "undefined" && exports !== null ? exports : this;
 
@@ -52,38 +52,17 @@
     throw new Error("Required jQuery or Zepto object is missing");
   }
 
-  json_parse = function(data) {
-    if (_.isString(data) === true) {
-      data = api.parseJSON(data);
-    }
-    return data;
-  };
-
-  find_request = function(name) {
-    var child, child_name, instance, parent, request;
-    request = null;
-    if (typeof requests[name] !== 'undefined') {
-      parent = requests[name];
-      if (parent.executed === true) {
-        child_name = _.uniqueId("" + name + "_");
-        child = new Request;
-        events.clone("Request.onError: " + name).to("Request.onError: " + child_name);
-        events.clone("Request.onComplete: " + name).to("Request.onComplete: " + child_name);
-        events.clone("Request.beforeSend: " + name).to("Request.beforeSend: " + child_name);
-        child.put(parent.config);
-        instance = child;
-      }
-      instance = parent;
-    } else {
-      instance = new Request;
-      instance.config = _.defaults(instance.config, RequestRepository.config);
-      requests[name] = instance;
-    }
-    return instance;
-  };
-
   Request = (function() {
+    var json_parse;
+
     function Request() {}
+
+    json_parse = function(data) {
+      if (_.isString(data) === true) {
+        data = api.parseJSON(data);
+      }
+      return data;
+    };
 
     Request.prototype.executed = false;
 
@@ -198,6 +177,32 @@
   })();
 
   RequestRepository = (function() {
+    var find_request;
+
+    find_request = function(name) {
+      var child, child_name, parent, request;
+      request = null;
+      if (typeof requests[name] !== 'undefined') {
+        parent = requests[name];
+        if (parent.executed === true) {
+          child_name = _.uniqueId("" + name + "_");
+          child = new Request;
+          events.clone("Request.onError: " + name).to("Request.onError: " + child_name);
+          events.clone("Request.onComplete: " + name).to("Request.onComplete: " + child_name);
+          events.clone("Request.beforeSend: " + name).to("Request.beforeSend: " + child_name);
+          child.put(parent.config);
+          request = child;
+        }
+        request = parent;
+      } else {
+        request = new Request;
+        request.config = _.defaults(request.config, RequestRepository.config);
+        console.log(request.config);
+        requests[name] = request;
+      }
+      return request;
+    };
+
     function RequestRepository(name) {
       return RequestRepository.make(name);
     }
