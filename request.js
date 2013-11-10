@@ -55,8 +55,6 @@
   Request = (function() {
     var json_parse;
 
-    function Request() {}
-
     json_parse = function(data) {
       if (_.isString(data) === true) {
         data = api.parseJSON(data);
@@ -76,6 +74,10 @@
       'id': '',
       'object': null
     };
+
+    function Request(name) {
+      this.put('name', name);
+    }
 
     Request.prototype.get = function(key, alt) {
       if (typeof this.config[key] !== 'undefined') {
@@ -97,9 +99,7 @@
 
     Request.prototype.to = function(url, object, data_type) {
       var queries, request_method, segment, type, uri;
-      if (data_type == null) {
-        data_type = 'json';
-      }
+      this.put('dataType', data_type != null ? data_type : data_type = 'json');
       request_method = ['POST', 'GET', 'PUT', 'DELETE'];
       if (typeof url === 'undefined') {
         throw new Error("Missing required url parameter");
@@ -108,10 +108,6 @@
         object = root.document;
       }
       segment = url.split(' ');
-      this.put({
-        'name': name,
-        'dataType': data_type
-      });
       if (segment.length === 1) {
         uri = segment[0];
       } else {
@@ -195,7 +191,7 @@
         }
         request = parent;
       } else {
-        request = new Request;
+        request = new Request(name);
         request.config = _.defaults(request.config, RequestRepository.config);
         requests[name] = request;
       }

@@ -51,6 +51,8 @@ class Request
 		'dataType': 'json'
 		'id': ''
 		'object': null
+	constructor: (name) ->
+		@put('name', name)
 	get: (key, alt) ->
 		return @config[key] if typeof @config[key] isnt 'undefined'
 		alt ?= null
@@ -61,7 +63,7 @@ class Request
 				key: value
 		@config = _.defaults(config, @config)
 	to: (url, object, data_type) ->
-		data_type ?= 'json'
+		@put('dataType', data_type ?= 'json')
 		request_method = ['POST', 'GET', 'PUT', 'DELETE']
 
 		if typeof url is 'undefined'
@@ -71,10 +73,6 @@ class Request
 			object = root.document
 
 		segment = url.split(' ')
-		@put({
-			'name': name
-			'dataType': data_type
-		})
 
 		if segment.length is 1
 			uri = segment[0]
@@ -151,7 +149,7 @@ class RequestRepository
 				request = child
 			request = parent
 		else
-			request = new Request
+			request = new Request(name)
 			request.config = _.defaults(request.config, RequestRepository.config)
 			requests[name] = request
 
