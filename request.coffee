@@ -99,7 +99,7 @@ class Request
 	execute: (data) ->
 		self = @
 
-		name = self.name
+		name = @get('name')
 
 		unless _.isObject(data)
 			data = "#{api(@get('object')).serialize()}&#{@get('query')}"

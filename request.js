@@ -140,7 +140,7 @@
     Request.prototype.execute = function(data) {
       var name, request, self;
       self = this;
-      name = self.name;
+      name = this.get('name');
       if (!_.isObject(data)) {
         data = "" + (api(this.get('object')).serialize()) + "&" + (this.get('query'));
         if (data === '?&') {
