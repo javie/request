@@ -18,13 +18,13 @@
 
 
 (function() {
-  var Request, RequestRepository, api, events, requests, root, _;
+  var Request, RequestRepository, api, dispatcher, requests, root, _;
 
   root = typeof exports !== "undefined" && exports !== null ? exports : this;
 
   requests = {};
 
-  events = null;
+  dispatcher = null;
 
   if (typeof root.Javie === 'undefined') {
     throw new Error("Javie is missing");
@@ -34,7 +34,7 @@
     throw new Error("Javie.EventDispatcher is missing");
   }
 
-  events = root.Javie.EventDispatcher.make();
+  dispatcher = root.Javie.EventDispatcher.make();
 
   _ = root._;
 
@@ -101,10 +101,10 @@
         'dataType': data_type != null ? data_type : data_type = 'json'
       });
       request_method = ['POST', 'GET', 'PUT', 'DELETE'];
-      if (typeof url === 'undefined') {
+      if (_.isUndefined(url)) {
         throw new Error("Missing required url parameter");
       }
-      if (object == null) {
+      if (object != null) {
         object = root.document;
       }
       segment = url.split(' ');
@@ -138,8 +138,9 @@
     };
 
     Request.prototype.execute = function(data) {
-      var request, self;
+      var name, request, self;
       self = this;
+      name = self.name;
       if (!_.isObject(data)) {
         data = "" + (api(this.get('object')).serialize()) + "&" + (this.get('query'));
         if (data === '?&') {
@@ -147,8 +148,8 @@
         }
       }
       this.executed = true;
-      events.fire('Request.beforeSend', [this]);
-      events.fire("Request.beforeSend: " + name, [this]);
+      dispatcher.fire('Request.beforeSend', [this]);
+      dispatcher.fire("Request.beforeSend: " + name, [this]);
       this.config['beforeSend'](this);
       request = {
         'type': this.get('type'),
@@ -159,14 +160,14 @@
           var status;
           data = json_parse(xhr.responseText);
           status = xhr.status;
-          if (typeof data !== 'undefined' && data.hasOwnProperty('errors')) {
-            events.fire('Request.onError', [data.errors, status, self]);
-            events.fire("Request.onError: " + name, [data.errors, status, self]);
+          if (!_.isUndefined(data) && data.hasOwnProperty('errors')) {
+            dispatcher.fire('Request.onError', [data.errors, status, self]);
+            dispatcher.fire("Request.onError: " + name, [data.errors, status, self]);
             self.config['onError'](data.errors, status, self);
             data.errors = null;
           }
-          events.fire('Request.onComplete', [data, status, self]);
-          events.fire("Request.onComplete: " + name, [data, status, self]);
+          dispatcher.fire('Request.onComplete', [data, status, self]);
+          dispatcher.fire("Request.onComplete: " + name, [data, status, self]);
           self.config['onComplete'](data, status, self);
           return true;
         }
@@ -185,14 +186,14 @@
     find_request = function(name) {
       var child, child_name, parent, request;
       request = null;
-      if (typeof requests[name] !== 'undefined') {
+      if (!_.isUndefined(requests[name])) {
         parent = requests[name];
         if (parent.executed === true) {
           child_name = _.uniqueId("" + name + "_");
           child = new Request;
-          events.clone("Request.onError: " + name).to("Request.onError: " + child_name);
-          events.clone("Request.onComplete: " + name).to("Request.onComplete: " + child_name);
-          events.clone("Request.beforeSend: " + name).to("Request.beforeSend: " + child_name);
+          dispatcher.clone("Request.onError: " + name).to("Request.onError: " + child_name);
+          dispatcher.clone("Request.onComplete: " + name).to("Request.onComplete: " + child_name);
+          dispatcher.clone("Request.beforeSend: " + name).to("Request.beforeSend: " + child_name);
           child.put(parent.config);
           request = child;
         }
@@ -230,7 +231,7 @@
       if (alt == null) {
         alt = null;
       }
-      if (typeof this.config[key] === 'undefined') {
+      if (_.isUndefined(this.config[key])) {
         return alt;
       }
       return this.config[key];

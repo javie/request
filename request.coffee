@@ -99,6 +99,8 @@ class Request
 	execute: (data) ->
 		self = @
 
+		name = self.name
+
 		unless _.isObject(data)
 			data = "#{api(@get('object')).serialize()}&#{@get('query')}"
 			data = '' if data is '?&'
