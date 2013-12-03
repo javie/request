@@ -17,14 +17,14 @@
 
 root = exports ? @
 requests = {}
-events = null
+dispatcher = null
 
-unless typeof root.Javie isnt 'undefined'
+if typeof root.Javie is 'undefined'
 	throw new Error("Javie is missing")
-unless typeof root.Javie.EventDispatcher isnt 'undefined'
+if typeof root.Javie.EventDispatcher is 'undefined'
 	throw new Error("Javie.EventDispatcher is missing")
 
-events = root.Javie.EventDispatcher.make()
+dispatcher = root.Javie.EventDispatcher.make()
 
 _ = root._
 _ = require('underscore') if !_ and require?
@@ -64,10 +64,10 @@ class Request
 		@put({'dataType': data_type ?= 'json'})
 		request_method = ['POST', 'GET', 'PUT', 'DELETE']
 
-		if typeof url is 'undefined'
+		if _.isUndefined(url)
 			throw new Error("Missing required url parameter")
 
-		unless object?
+		if object?
 			object = root.document
 
 		segment = url.split(' ')
@@ -105,8 +105,8 @@ class Request
 
 		@executed = true
 
-		events.fire('Request.beforeSend', [@])
-		events.fire("Request.beforeSend: #{name}", [@])
+		dispatcher.fire('Request.beforeSend', [@])
+		dispatcher.fire("Request.beforeSend: #{name}", [@])
 		@config['beforeSend'](@)
 
 		request =
@@ -118,14 +118,14 @@ class Request
 				data = json_parse(xhr.responseText)
 				status = xhr.status
 
-				if typeof data isnt 'undefined' and data.hasOwnProperty('errors')
-					events.fire('Request.onError', [data.errors, status, self])
-					events.fire("Request.onError: #{name}", [data.errors, status, self])
+				if !_.isUndefined(data) and data.hasOwnProperty('errors')
+					dispatcher.fire('Request.onError', [data.errors, status, self])
+					dispatcher.fire("Request.onError: #{name}", [data.errors, status, self])
 					self.config['onError'](data.errors, status, self)
 					data.errors = null
 
-				events.fire('Request.onComplete', [data, status, self])
-				events.fire("Request.onComplete: #{name}", [data, status, self])
+				dispatcher.fire('Request.onComplete', [data, status, self])
+				dispatcher.fire("Request.onComplete: #{name}", [data, status, self])
 				self.config['onComplete'](data, status, self)
 
 				true
@@ -135,16 +135,16 @@ class Request
 class RequestRepository
 	find_request = (name) ->
 		request = null
-		unless typeof requests[name] is 'undefined'
+		unless _.isUndefined(requests[name])
 			parent = requests[name]
 
 			if parent.executed is yes
 				child_name = _.uniqueId("#{name}_")
 				child = new Request
 
-				events.clone("Request.onError: #{name}").to("Request.onError: #{child_name}");
-				events.clone("Request.onComplete: #{name}").to("Request.onComplete: #{child_name}");
-				events.clone("Request.beforeSend: #{name}").to("Request.beforeSend: #{child_name}");
+				dispatcher.clone("Request.onError: #{name}").to("Request.onError: #{child_name}");
+				dispatcher.clone("Request.onComplete: #{name}").to("Request.onComplete: #{child_name}");
+				dispatcher.clone("Request.beforeSend: #{name}").to("Request.beforeSend: #{child_name}");
 
 				child.put(parent.config)
 				request = child
@@ -169,7 +169,7 @@ class RequestRepository
 		'onComplete': (data, status) ->
 	@get: (key, alt) ->
 		alt ?= null
-		return alt if typeof @config[key] is 'undefined'
+		return alt if _.isUndefined(@config[key])
 		@config[key]
 	@put: (key, value) ->
 		config = key
