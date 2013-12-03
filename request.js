@@ -137,12 +137,14 @@
       return this;
     };
 
-    Request.prototype.execute = function() {
-      var data, request, self;
+    Request.prototype.execute = function(data) {
+      var request, self;
       self = this;
-      data = "" + (api(this.get('object')).serialize()) + "&" + (this.get('query'));
-      if (data === '?&') {
-        data = '';
+      if (!_.isObject(data)) {
+        data = "" + (api(this.get('object')).serialize()) + "&" + (this.get('query'));
+        if (data === '?&') {
+          data = '';
+        }
       }
       this.executed = true;
       events.fire('Request.beforeSend', [this]);

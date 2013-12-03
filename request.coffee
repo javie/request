@@ -96,10 +96,12 @@ class Request
 		id = api(@get('object')).attr('id')
 		@put({'id': "##{id}"}) if typeof id isnt 'undefined'
 		@
-	execute: ->
+	execute: (data) ->
 		self = @
-		data = "#{api(@get('object')).serialize()}&#{@get('query')}"
-		data = '' if data is '?&'
+
+		unless _.isObject(data)
+			data = "#{api(@get('object')).serialize()}&#{@get('query')}"
+			data = '' if data is '?&'
 
 		@executed = true
 
