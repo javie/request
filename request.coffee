@@ -75,7 +75,7 @@ class Request
 		if segment.length is 1
 			uri = segment[0]
 		else
-			if _.indexOf(request_method, segment[0]) is yes
+			if _.indexOf(request_method, segment[0]) isnt -1
 				type = segment[0]
 
 			uri = segment[1]
