@@ -39,7 +39,11 @@ if typeof api is 'undefined' or api is null
 
 class Request
 	json_parse = (data) ->
-		data = api.parseJSON(data) if _.isString(data) is yes
+		if _.isString(data) is yes
+			try data = api.parseJSON(data)
+			catch e
+				# do nothing
+
 		data
 	executed: false
 	config:

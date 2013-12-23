@@ -58,8 +58,13 @@
     function Request() {}
 
     json_parse = function(data) {
+      var e;
       if (_.isString(data) === true) {
-        data = api.parseJSON(data);
+        try {
+          data = api.parseJSON(data);
+        } catch (_error) {
+          e = _error;
+        }
       }
       return data;
     };
