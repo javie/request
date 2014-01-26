@@ -46,6 +46,7 @@ class Request
 
 		data
 	executed: false
+	response: null
 	config:
 		'name': ''
 		'type': 'GET'
@@ -101,7 +102,7 @@ class Request
 		@put({'id': "##{id}"}) if typeof id isnt 'undefined'
 		@
 	execute: (data) ->
-		self = @
+		me = @
 
 		name = @get('name')
 
@@ -123,16 +124,17 @@ class Request
 			'complete': (xhr) ->
 				data = json_parse(xhr.responseText)
 				status = xhr.status
+				me.response = xhr
 
 				if !_.isUndefined(data) and data.hasOwnProperty('errors')
-					dispatcher.fire('Request.onError', [data.errors, status, self])
-					dispatcher.fire("Request.onError: #{name}", [data.errors, status, self])
-					self.config['onError'](data.errors, status, self)
+					dispatcher.fire('Request.onError', [data.errors, status, me])
+					dispatcher.fire("Request.onError: #{name}", [data.errors, status, me])
+					me.config['onError'](data.errors, status, me)
 					data.errors = null
 
-				dispatcher.fire('Request.onComplete', [data, status, self])
-				dispatcher.fire("Request.onComplete: #{name}", [data, status, self])
-				self.config['onComplete'](data, status, self)
+				dispatcher.fire('Request.onComplete', [data, status, me])
+				dispatcher.fire("Request.onComplete: #{name}", [data, status, me])
+				me.config['onComplete'](data, status, me)
 
 				true
 		api.ajax(request)

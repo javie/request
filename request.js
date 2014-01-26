@@ -71,6 +71,8 @@
 
     Request.prototype.executed = false;
 
+    Request.prototype.response = null;
+
     Request.prototype.config = {
       'name': '',
       'type': 'GET',
@@ -143,8 +145,8 @@
     };
 
     Request.prototype.execute = function(data) {
-      var name, request, self;
-      self = this;
+      var me, name, request;
+      me = this;
       name = this.get('name');
       if (!_.isObject(data)) {
         data = "" + (api(this.get('object')).serialize()) + "&" + (this.get('query'));
@@ -165,15 +167,16 @@
           var status;
           data = json_parse(xhr.responseText);
           status = xhr.status;
+          me.response = xhr;
           if (!_.isUndefined(data) && data.hasOwnProperty('errors')) {
-            dispatcher.fire('Request.onError', [data.errors, status, self]);
-            dispatcher.fire("Request.onError: " + name, [data.errors, status, self]);
-            self.config['onError'](data.errors, status, self);
+            dispatcher.fire('Request.onError', [data.errors, status, me]);
+            dispatcher.fire("Request.onError: " + name, [data.errors, status, me]);
+            me.config['onError'](data.errors, status, me);
             data.errors = null;
           }
-          dispatcher.fire('Request.onComplete', [data, status, self]);
-          dispatcher.fire("Request.onComplete: " + name, [data, status, self]);
-          self.config['onComplete'](data, status, self);
+          dispatcher.fire('Request.onComplete', [data, status, me]);
+          dispatcher.fire("Request.onComplete: " + name, [data, status, me]);
+          me.config['onComplete'](data, status, me);
           return true;
         }
       };
