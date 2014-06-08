@@ -72,8 +72,10 @@ class Request
 		if _.isUndefined(url)
 			throw new Error("Missing required url parameter")
 
-		if object?
+		unless object?
 			object = root.document
+
+		@put('object', object)
 
 		segment = url.split(' ')
 

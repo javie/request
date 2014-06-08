@@ -110,9 +110,10 @@
       if (_.isUndefined(url)) {
         throw new Error("Missing required url parameter");
       }
-      if (object != null) {
+      if (object == null) {
         object = root.document;
       }
+      this.put('object', object);
       segment = url.split(' ');
       if (segment.length === 1) {
         uri = segment[0];
