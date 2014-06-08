@@ -62,8 +62,8 @@ class Request
 	put: (key, value) ->
 		config = key
 		unless _.isObject(key)
-			config =
-				key: value
+			config = {}
+			config[key] = value
 		@config = _.defaults(config, @config)
 	to: (url, object, data_type) ->
 		@put({'dataType': data_type ?= 'json'})
@@ -75,7 +75,7 @@ class Request
 		unless object?
 			object = root.document
 
-		@put('object', object)
+		@put({'object': object})
 
 		segment = url.split(' ')
 
@@ -92,7 +92,7 @@ class Request
 
 				if queries.length > 1
 					url = queries[0]
-					@put('query', queries[1])
+					@put({'query': queries[1]})
 
 			uri = uri.replace(':baseUrl', @get('baseUrl', ''))
 			@put({
@@ -184,8 +184,8 @@ class RequestRepository
 	@put: (key, value) ->
 		config = key
 		unless _.isObject(key)
-			config =
-				key: value
+			config = {}
+			config[key] = value
 		@config = _.defaults(config, @config)
 
 if exports?

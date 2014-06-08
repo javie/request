@@ -94,9 +94,8 @@
       var config;
       config = key;
       if (!_.isObject(key)) {
-        config = {
-          key: value
-        };
+        config = {};
+        config[key] = value;
       }
       return this.config = _.defaults(config, this.config);
     };
@@ -113,7 +112,9 @@
       if (object == null) {
         object = root.document;
       }
-      this.put('object', object);
+      this.put({
+        'object': object
+      });
       segment = url.split(' ');
       if (segment.length === 1) {
         uri = segment[0];
@@ -126,7 +127,9 @@
           queries = uri.split('?');
           if (queries.length > 1) {
             url = queries[0];
-            this.put('query', queries[1]);
+            this.put({
+              'query': queries[1]
+            });
           }
         }
         uri = uri.replace(':baseUrl', this.get('baseUrl', ''));
@@ -249,9 +252,8 @@
       var config;
       config = key;
       if (!_.isObject(key)) {
-        config = {
-          key: value
-        };
+        config = {};
+        config[key] = value;
       }
       return this.config = _.defaults(config, this.config);
     };
